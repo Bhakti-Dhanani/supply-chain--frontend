@@ -6,7 +6,7 @@ import inventoryReducer from './slices/inventorySlice';
 import productReducer from './slices/productSlice';
 import notificationReducer from './slices/notificationSlice';
 
-const store = configureStore({
+ export const store = configureStore({
   reducer: {
     auth: authReducer,
     orders: orderReducer,

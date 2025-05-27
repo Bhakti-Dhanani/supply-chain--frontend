@@ -1,21 +1,34 @@
-import { useState } from 'react';
-import { login } from '../apis/auth';
+import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import type { RootState } from '../redux/store';
 
-export const useAuth = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+const useAuth = () => {
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const navigate = useNavigate();
 
-  const authenticate = async (credentials: { email: string; password: string }) => {
-    setLoading(true);
-    try {
-      const data = await login(credentials);
-      setUser(data);
-    } catch (error) {
-      console.error('Authentication failed', error);
-    } finally {
-      setLoading(false);
+  const redirectToDashboard = () => {
+    if (user) {
+      switch (user.role) {
+        case 'Admin':
+          navigate('/dashboard/admin');
+          break;
+        case 'Vendor':
+          navigate('/dashboard/vendor');
+          break;
+        case 'Transporter':
+          navigate('/dashboard/transporter');
+          break;
+        case 'WarehouseManager':
+          navigate('/dashboard/warehouse');
+          break;
+        default:
+          navigate('/login');
+      }
     }
   };
 
-  return { user, loading, authenticate };
+  return { user, isAuthenticated, redirectToDashboard };
 };
+
+export default useAuth;
