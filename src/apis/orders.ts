@@ -4,8 +4,9 @@ const ordersApi = axios.create({
   baseURL: '/api/orders',
 });
 
-export const fetchOrders = async () => {
-  const response = await ordersApi.get('/');
+// Fetch orders for a specific vendor
+export const fetchOrders = async (vendorId: number) => {
+  const response = await ordersApi.get('/', { params: { vendorId } });
   return response.data;
 };
 
