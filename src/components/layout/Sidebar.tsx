@@ -1,6 +1,6 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import React, { useEffect } from 'react';
+import { NavLink, Link } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../redux/store';
 import {
   FiHome,
@@ -11,11 +11,14 @@ import {
   FiUsers,
   FiMap
 } from 'react-icons/fi';
+import { fetchOrders } from '../../apis/orders';
+import { setOrders } from '../../redux/slices/orderSlice';
 
 const Sidebar: React.FC = () => {
   // Get authenticated user data from Redux store
   const { user } = useSelector((state: RootState) => state.auth);
   const orderCount = useSelector((state: RootState) => Array.isArray(state.orders.orders) ? state.orders.orders.length : 0);
+  const dispatch = useDispatch();
 
   /**
    * Generates initials from user's name
@@ -41,6 +44,19 @@ const Sidebar: React.FC = () => {
     if (!role) return 'Premium Member';
     return `${role.charAt(0).toUpperCase()}${role.slice(1).toLowerCase()} Account`;
   };
+
+  useEffect(() => {
+    // Always fetch orders on sidebar mount to keep count up-to-date
+    const getOrders = async () => {
+      try {
+        const data = await fetchOrders();
+        dispatch(setOrders(data));
+      } catch (err) {
+        // Optionally handle error
+      }
+    };
+    getOrders();
+  }, [dispatch]);
 
   return (
     <div className="w-64 h-screen bg-[#1E3B3B] text-white fixed top-0 left-0 shadow-xl z-10">
@@ -138,7 +154,7 @@ const Sidebar: React.FC = () => {
         </NavLink>
 
         <NavLink
-          to="/dashboard/vendor/customers"
+          to="/dashboard/vendor/Warehouses"
           className={({ isActive }) =>
             `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 focus:outline-none focus:text-[#B3D5CF] active:text-[#B3D5CF] ${
               isActive 
@@ -148,7 +164,7 @@ const Sidebar: React.FC = () => {
           }
         >
           <FiUsers className="flex-shrink-0 text-lg" />
-          <span>Customers</span>
+          <span>Warehouses</span>
         </NavLink>
 
         <NavLink
@@ -164,6 +180,14 @@ const Sidebar: React.FC = () => {
           <FiMap className="flex-shrink-0 text-lg" />
           <span>Delivery Routes</span>
         </NavLink>
+
+        {/* New Product List Link - Adjusted Position */}
+        <li>
+          <Link to="/products" className="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 focus:outline-none focus:text-[#B3D5CF] active:text-[#B3D5CF] text-[#D6ECE6] hover:bg-[#2A4D4D] hover:text-[#B3D5CF]">
+            <FiPackage className="flex-shrink-0 text-lg" />
+            <span>Product List</span>
+          </Link>
+        </li>
       </nav>
 
       {/* Bottom Settings Section */}

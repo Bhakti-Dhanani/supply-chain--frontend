@@ -16,7 +16,12 @@ export const fetchOrders = async () => {
 };
 
 export const createOrder = async (orderData: any) => {
-  const response = await ordersApi.post('/', orderData);
+  const token = localStorage.getItem('token');
+  const response = await ordersApi.post('/', orderData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   return response.data;
 };
 

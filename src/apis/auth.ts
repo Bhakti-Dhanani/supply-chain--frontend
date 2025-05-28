@@ -7,6 +7,13 @@ const authApi = axios.create({
 export const login = async (credentials: { email: string; password: string }) => {
   try {
     const response = await authApi.post('/login', credentials);
+    const token = response.data.access_token; // Updated to match the response key
+    if (token) {
+      localStorage.setItem('authToken', token);
+      console.log('Auth token stored in localStorage:', token);
+    } else {
+      console.error('No token received from login response');
+    }
     return response.data;
   } catch (error: any) {
     console.error('Login API Error:', error.response || error.message);

@@ -11,6 +11,8 @@ import VendorHeader from './components/common/VendorHeader';
 import Sidebar from './components/layout/Sidebar';
 import Orders from './pages/dashboard/vendor/Orders';
 import OrderDetails from './pages/dashboard/vendor/OrderDetails';
+import CreateOrder from './pages/dashboard/vendor/CreateOrder';
+
 
 import './App.css'
 
@@ -37,6 +39,7 @@ function App() {
                       <Route index element={<VendorDashboard />} />
                       <Route path="overview" element={<VendorDashboard />} />
                       <Route path="orders" element={<Orders />} />
+                       <Route path="orders/create" element={<CreateOrder />} />
                       <Route path="orders/:id" element={<OrderDetails />} />
                       <Route path="products" element={<VendorDashboard />} />
                       <Route path="settings" element={<VendorDashboard />} />
