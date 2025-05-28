@@ -9,7 +9,8 @@ import TransporterDashboard from './pages/dashboard/transporter/TransporterDashb
 import WarehouseDashboard from './pages/dashboard/warehouse/WarehouseDashboard';
 import VendorHeader from './components/common/VendorHeader';
 import Sidebar from './components/layout/Sidebar';
-
+import Orders from './pages/dashboard/vendor/Orders';
+import OrderDetails from './pages/dashboard/vendor/OrderDetails';
 
 import './App.css'
 
@@ -35,7 +36,8 @@ function App() {
                     <Routes>
                       <Route index element={<VendorDashboard />} />
                       <Route path="overview" element={<VendorDashboard />} />
-                      <Route path="orders" element={<VendorDashboard />} />
+                      <Route path="orders" element={<Orders />} />
+                      <Route path="orders/:id" element={<OrderDetails />} />
                       <Route path="products" element={<VendorDashboard />} />
                       <Route path="settings" element={<VendorDashboard />} />
                     </Routes>

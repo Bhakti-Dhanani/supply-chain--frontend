@@ -15,6 +15,7 @@ import {
 const Sidebar: React.FC = () => {
   // Get authenticated user data from Redux store
   const { user } = useSelector((state: RootState) => state.auth);
+  const orderCount = useSelector((state: RootState) => Array.isArray(state.orders.orders) ? state.orders.orders.length : 0);
 
   /**
    * Generates initials from user's name
@@ -101,7 +102,7 @@ const Sidebar: React.FC = () => {
           <FiTrendingUp className="flex-shrink-0 text-lg" />
           <span>Orders</span>
           <span className="ml-auto bg-[#EADCD6] text-[#1E3B3B] text-xs font-bold px-2 py-1 rounded-full">
-            5
+            {orderCount}
           </span>
         </NavLink>
 
