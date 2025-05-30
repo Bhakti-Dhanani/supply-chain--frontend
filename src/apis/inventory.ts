@@ -15,7 +15,8 @@ export const fetchSubcategories = async (categoryId: string) => {
   return Array.isArray(response.data) ? response.data : (response.data.subcategories || []);
 };
 
-export const fetchStockMovements = async (filters: any) => {
-  const response = await axiosInstance.get('/stock-movements', { params: filters });
+export const fetchStockMovements = async () => {
+  // No filters, just fetch all stock movements for the current user
+  const response = await axiosInstance.get('/stock-movements');
   return Array.isArray(response.data) ? response.data : (response.data.movements || []);
 };
