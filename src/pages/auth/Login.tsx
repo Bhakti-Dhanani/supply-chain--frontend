@@ -23,14 +23,15 @@ const Login = () => {
       const data = await login({ email, password });
 
       if (data && data.access_token && data.role) {
-        localStorage.setItem('token', data.access_token);
-        dispatch(loginAction({ id: data.userId, role: data.role, name: data.name, email }));
-
+        // Store token and user in Redux (persisted by redux-persist/sessionStorage)
+        dispatch(loginAction({
+          user: { id: data.userId, role: data.role, name: data.name, email },
+          token: data.access_token,
+        }));
         toast.success('Successfully Logged In! Redirecting...');
-
         switch (data.role) {
           case 'Admin': navigate('/dashboard/admin'); break;
-          case 'Vendor': navigate('/dashboard/vendor/VendorDashboard'); break;
+          case 'Vendor': navigate('/dashboard/vendor'); break;
           case 'Transporter': navigate('/dashboard/transporter'); break;
           case 'Manager': navigate('/dashboard/warehouse'); break;
           default:

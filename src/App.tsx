@@ -1,50 +1,95 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { useEffect, useState } from 'react';
+import type { RootState } from './redux/store';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import AdminDashboard from './pages/dashboard/admin/AdminDashboard';
 import VendorDashboard from './pages/dashboard/vendor/VendorDashboard';
 import TransporterDashboard from './pages/dashboard/transporter/TransporterDashboard';
 import WarehouseDashboard from './pages/dashboard/warehouse/WarehouseDashboard';
-import VendorHeader from './components/common/VendorHeader';
-import Sidebar from './components/layout/Sidebar';
+import VendorLayout from './components/layout/VendorLayout';
+import Orders from './pages/dashboard/vendor/Orders';
+import CreateOrder from './pages/dashboard/vendor/CreateOrder';
+import OrderDetails from './pages/dashboard/vendor/OrderDetails';
+import ProductList from './pages/dashboard/vendor/ProductList';
+import ProductDetails from './pages/dashboard/vendor/ProductDetails';
+import WarehouseLayout from './components/layout/WarehouseLayout';
+import { persistor } from './redux/store';
+import WarehouseLocations from './pages/dashboard/warehouse/WarehouseLocations';
+import WarehouseOrders from './pages/dashboard/warehouse/WarehouseOrders';
+import WarehouseInventory from './pages/dashboard/warehouse/WarehouseInventory';
+import AddProduct from './pages/dashboard/warehouse/AddProduct';
 
 import './App.css'
 
 function App() {
- 
+  // Get authentication state from Redux
+  const { user, token } = useSelector((state: RootState) => state.auth);
+
+  // Robust check: authenticated if user and token exist
+  const isReallyAuthenticated = Boolean(user && user.id && token);
+
+  // Wait for redux-persist rehydration before rendering routes
+  const [rehydrated, setRehydrated] = useState(persistor.getState().bootstrapped);
+
+  useEffect(() => {
+    const unsubscribe = persistor.subscribe(() => {
+      if (persistor.getState().bootstrapped) setRehydrated(true);
+    });
+    return unsubscribe;
+  }, []);
+
+  if (!rehydrated) {
+    // Optionally show a loading spinner here
+    return <div>Loading...</div>;
+  }
 
   return (
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/dashboard/admin" element={<AdminDashboard />} />
+        <Route path="/dashboard/admin" element={isReallyAuthenticated ? <AdminDashboard /> : <Navigate to="/login" replace />} />
         <Route
-
           path="/dashboard/vendor/*"
           element={
-            <div className="flex flex-col min-h-screen">
-              <VendorHeader />
-              <div className="flex flex-1">
-                <Sidebar />
-                <div className="flex-grow p-4">
-                  <Routes>
-                  
-                     <Route index element={<VendorDashboard />} />
-                    <Route path="VendorDashboard" element={<VendorDashboard />} />
-                    <Route path="orders" element={<VendorDashboard />} />
-                    <Route path="products" element={<VendorDashboard />} />
-                    <Route path="settings" element={<VendorDashboard />} />
-                  </Routes>
-                </div>
-              </div>
-            </div>
+            isReallyAuthenticated ? (
+              <VendorLayout>
+                <Routes>
+                  <Route index element={<Navigate to="overview" replace />} />
+                  <Route path="overview" element={<VendorDashboard />} />
+                  <Route path="orders" element={<Orders />} />
+                  <Route path="orders/create" element={<CreateOrder />} />
+                  <Route path="orders/:id" element={<OrderDetails />} />
+                  <Route path="products" element={<ProductList />} />
+                  <Route path="products/:id" element={<ProductDetails />} />
+                </Routes>
+              </VendorLayout>
+            ) : <Navigate to="/login" replace />
           }
         />
-        <Route path="/dashboard/transporter" element={<TransporterDashboard />} />
-        <Route path="/dashboard/warehouse" element={<WarehouseDashboard />} />
+        <Route path="/dashboard/transporter" element={isReallyAuthenticated ? <TransporterDashboard /> : <Navigate to="/login" replace />} />
+        <Route
+          path="/dashboard/warehouse/*"
+          element={
+            isReallyAuthenticated ? (
+              <WarehouseLayout>
+                <Routes>
+                  <Route index element={<WarehouseDashboard />} />
+                  <Route path="overview" element={<WarehouseDashboard />} />
+                  <Route path="locations" element={<WarehouseLocations />} />
+                  <Route path="orders" element={<WarehouseOrders />} />
+                  <Route path="inventory" element={<WarehouseInventory />} />
+                  <Route path="add-product" element={<AddProduct />} />
+                  {/* Add more warehouse manager routes here */}
+                </Routes>
+              </WarehouseLayout>
+            ) : <Navigate to="/login" replace />
+          }
+        />
       </Routes>
-  )
+  );
 }
 
-export default App
+export default App;

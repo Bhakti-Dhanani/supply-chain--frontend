@@ -10,28 +10,43 @@ interface User {
 
 interface AuthState {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
 }
 
-// Initialize state based on localStorage token
 const initialState: AuthState = {
   user: null,
-  isAuthenticated: !!localStorage.getItem('token'),
+  token: null,
+  isAuthenticated: false,
 };
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    login(state, action: PayloadAction<User>) {
-      state.user = action.payload;
+    login(state, action: PayloadAction<{ user: User; token: string }>) {
+      state.user = action.payload.user;
+      state.token = action.payload.token;
       state.isAuthenticated = true;
     },
     logout(state) {
       state.user = null;
+      state.token = null;
       state.isAuthenticated = false;
-      localStorage.removeItem('token');
     },
+  },
+  extraReducers: (builder) => {
+    builder.addMatcher(
+      (action) => action.type === 'persist/REHYDRATE',
+      (state, action: any) => {
+        if (action.payload && action.payload.auth) {
+          const { user, token } = action.payload.auth;
+          state.user = user;
+          state.token = token;
+          state.isAuthenticated = Boolean(user && user.id && token);
+        }
+      }
+    );
   },
 });
 
