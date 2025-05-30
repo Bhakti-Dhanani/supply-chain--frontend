@@ -21,11 +21,13 @@ import WarehouseOrders from './pages/dashboard/warehouse/WarehouseOrders';
 import WarehouseInventory from './pages/dashboard/warehouse/WarehouseInventory';
 import AddProduct from './pages/dashboard/warehouse/AddProduct';
 
-import './App.css'
+import './App.css';
 
 function App() {
   // Get authentication state from Redux
-  const { user, token } = useSelector((state: RootState) => state.auth);
+  const { users, tokens, currentUserId } = useSelector((state: RootState) => state.auth);
+  const user = currentUserId ? users[currentUserId] : null;
+  const token = currentUserId ? tokens[currentUserId] : null;
 
   // Robust check: authenticated if user and token exist
   const isReallyAuthenticated = Boolean(user && user.id && token);

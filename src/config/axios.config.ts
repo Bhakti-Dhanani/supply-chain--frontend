@@ -11,9 +11,12 @@ const axiosInstance = axios.create({
 // Add a request interceptor to always read token from sessionStorage
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Get token from Redux state (persisted in sessionStorage)
+    // Get tokens and currentUserId from Redux state (persisted in sessionStorage)
     const state = store.getState();
-    const token = state.auth?.token;
+    const tokens = state.auth?.tokens;
+    const currentUserId = state.auth?.currentUserId;
+    const token = currentUserId ? tokens[currentUserId] : null;
+
     if (token && token !== 'null' && token !== 'undefined') {
       config.headers = config.headers || {};
       config.headers['Authorization'] = `Bearer ${token}`;

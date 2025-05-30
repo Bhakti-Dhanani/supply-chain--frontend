@@ -17,8 +17,15 @@ import { fetchOrders } from '../../apis/orders';
 import { setOrders } from '../../redux/slices/orderSlice';
 
 const Sidebar: React.FC = () => {
-  const { user } = useSelector((state: RootState) => state.auth);
-  const orderCount = useSelector((state: RootState) => Array.isArray(state.orders.orders) ? state.orders.orders.length : 0);
+  const { users, currentUserId } = useSelector((state: RootState) => state.auth);
+  const user = currentUserId ? users[currentUserId] : null;
+  const orderCount = useSelector((state: RootState) => {
+    if (currentUserId) {
+      const orders = state.orders.orders[currentUserId];
+      return Array.isArray(orders) ? orders.length : 0;
+    }
+    return 0;
+  });
   const dispatch = useDispatch();
   const location = useLocation();
   const navigate = useNavigate();
@@ -38,15 +45,17 @@ const Sidebar: React.FC = () => {
 
   useEffect(() => {
     const getOrders = async () => {
-      try {
-        const data = await fetchOrders();
-        dispatch(setOrders(data));
-      } catch (err) {
-        console.error('Error fetching orders:', err);
+      if (currentUserId) {
+        try {
+          const data = await fetchOrders();
+          dispatch(setOrders({ userId: currentUserId, orders: data }));
+        } catch (err) {
+          console.error('Error fetching orders:', err);
+        }
       }
     };
     getOrders();
-  }, [dispatch]);
+  }, [dispatch, currentUserId]);
 
   useEffect(() => {
     if (location.pathname === '/dashboard/vendor') {

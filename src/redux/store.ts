@@ -1,6 +1,6 @@
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
-import storage from 'redux-persist/lib/storage'; // Use localStorage for persistence
+import storageSession from 'redux-persist/lib/storage/session'; // Use sessionStorage for persistence
 import authReducer from './slices/authSlice';
 import orderReducer from './slices/orderSlice';
 import shipmentReducer from './slices/shipmentSlice';
@@ -19,8 +19,8 @@ const rootReducer = combineReducers({
 
 const persistConfig = {
   key: 'root',
-  storage, // Use localStorage
-  whitelist: ['auth'], // persist only auth slice
+  storage: storageSession, // Use sessionStorage instead of localStorage
+  whitelist: ['auth', 'orders'], // Persist auth and orders slices
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
