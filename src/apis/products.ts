@@ -1,19 +1,14 @@
-import axios from 'axios';
+import axiosInstance from '../config/axios.config';
 
-const productsApi = axios.create({
-  baseURL: `${import.meta.env.VITE_API_BASE_URL}/api/products`,
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem('token')}`,
-  },
-});
+const productsApi = axiosInstance;
 
 export const fetchProducts = async () => {
-  const response = await productsApi.get('/');
+  const response = await productsApi.get('/products'); // Correct endpoint
   return response.data;
 };
 
 export const createProduct = async (productData: any) => {
-  const response = await productsApi.post('/', productData);
+  const response = await productsApi.post('/products', productData);
   return response.data;
 };
 
@@ -28,6 +23,16 @@ export const getProductsByWarehouse = async (warehouseId: number, categoryId?: n
     return response.data;
   } catch (error) {
     console.error('Error fetching products by warehouse:', error);
+    throw error;
+  }
+};
+
+export const getProductById = async (productId: number) => {
+  try {
+    const response = await productsApi.get(`/products/${productId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching product by ID:', error);
     throw error;
   }
 };

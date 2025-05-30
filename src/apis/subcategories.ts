@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const subcategoriesApi = axios.create({
-  baseURL:`${import.meta.env.VITE_API_BASE_URL}/api/subcategories`,
+   baseURL: import.meta.env.VITE_API_BASE_URL + '/subcategories',
 });
 
 export const fetchSubcategories = async (categoryId: number) => {

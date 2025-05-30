@@ -8,3 +8,8 @@ export const trackShipment = async (shipmentId: string) => {
   const response = await shipmentsApi.get(`/${shipmentId}`);
   return response.data;
 };
+
+export const fetchShipments = async () => {
+  const response = await shipmentsApi.get('/');
+  return response.data;
+};
