@@ -162,12 +162,14 @@ const Orders: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-2 py-4 md:px-6 whitespace-nowrap">
-                      <button
-                        onClick={() => navigate(`/dashboard/vendor/orders/${order.id}`)}
-                        className="bg-[#1E3B3B] text-[#D6ECE6] px-3 py-1 rounded hover:bg-[#2A4D4D] transition text-xs md:text-sm w-full md:w-auto shadow"
-                      >
-                        View Details
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => navigate(`/dashboard/vendor/orders/${order.id}`)}
+                          className="bg-[#1E3B3B] text-[#D6ECE6] px-3 py-1 rounded hover:bg-[#2A4D4D] transition text-xs md:text-sm w-full md:w-auto shadow"
+                        >
+                          View Details
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

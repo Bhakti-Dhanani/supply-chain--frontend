@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
-const OrderDetails: React.FC = () => {
+const WorderDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -129,8 +129,8 @@ const OrderDetails: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen px-0 sm:px-0 pt-4 pb-8 bg-white">
-      <div className="transition-all duration-300 ml-0">
+    <div className="min-h-screen px-0 pt-4 pb-8 bg-white sm:px-0">
+      <div className="ml-0 transition-all duration-300">
         <div className="flex flex-col gap-4 lg:flex-row sm:gap-6">
           {/* Map Section - Full width on mobile, 2/3 on desktop */}
           <Card className="w-full p-0 overflow-hidden border-0 shadow-sm lg:w-2/3 rounded-xl">
@@ -311,9 +311,9 @@ const OrderDetails: React.FC = () => {
           {similarOrders.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {similarOrders.map((similarOrder) => (
-                <Card key={similarOrder.id} className="p-4 sm:p-6 rounded-lg shadow-sm border">
+                <Card key={similarOrder.id} className="p-4 border rounded-lg shadow-sm sm:p-6">
                   <div className="flex flex-col gap-2">
-                    <div className="flex justify-between items-center">
+                    <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold text-[#1E3B3B] truncate">
                         Order #{similarOrder.id}
                       </h3>
@@ -355,4 +355,4 @@ const OrderDetails: React.FC = () => {
   );
 };
 
-export default OrderDetails;
+export default WorderDetails;

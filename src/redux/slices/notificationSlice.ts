@@ -19,8 +19,15 @@ const notificationSlice = createSlice({
     clearNotifications(state) {
       state.notifications = [];
     },
+    markAsViewed(state, action: PayloadAction<number>) {
+      const notificationId = action.payload;
+      const notification = state.notifications.find(n => n.id === notificationId);
+      if (notification) {
+        notification.viewed = true;
+      }
+    },
   },
 });
 
-export const { setNotifications, clearNotifications } = notificationSlice.actions;
+export const { setNotifications, clearNotifications, markAsViewed } = notificationSlice.actions;
 export default notificationSlice.reducer;

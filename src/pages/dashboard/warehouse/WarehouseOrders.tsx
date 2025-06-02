@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Tag, Modal, Select, message, Spin } from 'antd';
+import { Table, Tag, Modal, Select, message, Spin } from 'antd';
 import { fetchMyWarehouses } from '../../../apis/warehouse';
 import { fetchOrdersByWarehouseIds, updateOrderStatus } from '../../../apis/orders';
 import { useNavigate } from 'react-router-dom';
@@ -65,15 +65,17 @@ const WarehouseOrders: React.FC = () => {
       return isNaN(num) ? '-' : `₹${num.toFixed(2)}`;
     } },
     { title: 'Date', dataIndex: 'created_at', key: 'created_at', render: (date: string) => date ? new Date(date).toLocaleDateString() : '-' },
-    { title: 'Time', dataIndex: 'created_at', key: 'created_time', render: (date: string) => date ? new Date(date).toLocaleTimeString() : '-' },
-    { title: 'Delivery Location', dataIndex: 'location', key: 'location', render: (_: any, order: any) => order.location ? `${order.location.house || ''} ${order.location.street || ''}, ${order.location.city || ''}, ${order.location.state || ''}, ${order.location.country || ''}` : '-' },
     {
       title: 'Action',
       key: 'action',
       render: (_: any, order: any) => (
         <>
-          <Button size="small" onClick={() => navigate(`/dashboard/warehouse/orders/${order.id}`)} style={{ marginRight: 8 }}>Details</Button>
-          <Button size="small" onClick={() => { setStatusModal({ open: true, order }); setSelectedStatus(order.status); }}>Change Status</Button>
+          <button
+            onClick={() => navigate(`/dashboard/warehouse/orders/${order.id}`)}
+            className="bg-[#1E3B3B] text-[#D6ECE6] px-3 py-1 rounded hover:bg-[#2A4D4D] transition text-xs md:text-sm w-full md:w-auto shadow"
+          >
+            View Details
+          </button>
         </>
       ),
     },
