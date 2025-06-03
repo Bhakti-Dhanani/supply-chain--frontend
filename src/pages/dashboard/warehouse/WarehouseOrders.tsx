@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Tag, Modal, Select, message, Spin } from 'antd';
+import { Table, Tag, Modal, Select, message, Spin } from 'antd';
 import { fetchMyWarehouses } from '../../../apis/warehouse';
 import { fetchOrdersByWarehouseIds, updateOrderStatus } from '../../../apis/orders';
+import { createShipment } from '../../../apis/shipments';
 import { useNavigate } from 'react-router-dom';
 
 const statusOptions = [
@@ -23,17 +24,19 @@ const WarehouseOrders: React.FC = () => {
     const fetchOrders = async () => {
       setLoading(true);
       try {
+        const userId = 1; // Replace with dynamic userId if available
         const warehouses = await fetchMyWarehouses();
         const warehouseIds = warehouses.map((w: any) => w.id);
         if (warehouseIds.length === 0) {
           setOrders([]);
+          message.info('No warehouses connected to your account.');
           setLoading(false);
           return;
         }
-        const allOrders = await fetchOrdersByWarehouseIds(warehouseIds);
+        const allOrders = await fetchOrdersByWarehouseIds(warehouseIds, userId); // Pass userId explicitly
         setOrders(allOrders);
       } catch (err) {
-        message.error('Failed to fetch orders for your warehouses');
+        message.error('Failed to fetch orders for warehouses connected to your account. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -56,6 +59,20 @@ const WarehouseOrders: React.FC = () => {
     }
   };
 
+  const handleAssignShipment = async (orderId: number) => {
+    try {
+      const userId = 1; // Replace with actual user ID retrieval logic
+      const vehicleId = '1'; // Replace with vehicle selection logic
+
+      await createShipment({ orderId, userId, vehicleId });
+      message.success('Shipment assigned successfully!');
+      setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status: 'Shipped' } : o));
+    } catch (error) {
+      console.error('Error assigning shipment:', error);
+      message.error('Failed to assign shipment.');
+    }
+  };
+
   const columns = [
     { title: 'Order ID', dataIndex: 'id', key: 'id', render: (id: any) => <span>#{id}</span> },
     { title: 'Status', dataIndex: 'status', key: 'status', render: (status: string) => <Tag>{status}</Tag> },
@@ -65,23 +82,39 @@ const WarehouseOrders: React.FC = () => {
       return isNaN(num) ? '-' : `₹${num.toFixed(2)}`;
     } },
     { title: 'Date', dataIndex: 'created_at', key: 'created_at', render: (date: string) => date ? new Date(date).toLocaleDateString() : '-' },
-    { title: 'Time', dataIndex: 'created_at', key: 'created_time', render: (date: string) => date ? new Date(date).toLocaleTimeString() : '-' },
-    { title: 'Delivery Location', dataIndex: 'location', key: 'location', render: (_: any, order: any) => order.location ? `${order.location.house || ''} ${order.location.street || ''}, ${order.location.city || ''}, ${order.location.state || ''}, ${order.location.country || ''}` : '-' },
     {
       title: 'Action',
       key: 'action',
       render: (_: any, order: any) => (
         <>
-          <Button size="small" onClick={() => navigate(`/dashboard/warehouse/orders/${order.id}`)} style={{ marginRight: 8 }}>Details</Button>
-          <Button size="small" onClick={() => { setStatusModal({ open: true, order }); setSelectedStatus(order.status); }}>Change Status</Button>
+          <button
+            onClick={() => navigate(`/dashboard/warehouse/orders/${order.id}`)}
+            className="bg-[#1E3B3B] text-[#D6ECE6] px-3 py-1 rounded hover:bg-[#2A4D4D] transition text-xs md:text-sm w-full md:w-auto shadow"
+          >
+            View Details
+          </button>
         </>
+      ),
+    },
+    {
+      title: 'Assign Shipment',
+      key: 'assignShipment',
+      render: (_: any, order: any) => (
+        order.status === 'Pending' ? (
+          <button
+            onClick={() => handleAssignShipment(order.id)}
+            className="w-full px-3 py-1 text-xs text-white transition bg-blue-500 rounded shadow hover:bg-blue-600 md:text-sm md:w-auto"
+          >
+            Assign Shipment
+          </button>
+        ) : null
       ),
     },
   ];
 
   return (
     <div className="min-h-screen px-2 pt-4 pb-8 sm:px-4">
-      <h1 className="text-2xl font-bold text-[#1E3B3B] mb-6">Orders for Your Warehouses</h1>
+      <h1 className="text-2xl font-bold text-[#1E3B3B] mb-6">Orders for Warehouses Connected to You</h1>
       <div className="p-4 bg-white shadow-sm rounded-xl">
         {loading ? <Spin size="large" /> : (
           <Table

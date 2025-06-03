@@ -1,15 +1,19 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { logout as logoutAction } from '../../redux/slices/authSlice';
+import type { RootState } from '../../redux/store';
 
 const Logout: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const currentUserId = useSelector((state: RootState) => state.auth.currentUserId);
 
   const handleLogout = () => {
-    dispatch(logoutAction());
-    navigate('/login');
+    if (currentUserId) {
+      dispatch(logoutAction(currentUserId));
+      navigate('/login');
+    }
   };
 
   return (

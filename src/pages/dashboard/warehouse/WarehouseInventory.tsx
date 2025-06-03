@@ -51,12 +51,13 @@ const WarehouseInventory: React.FC = () => {
   useEffect(() => {
     const fetchInventory = async () => {
       setLoading(true);
-      const data = await fetchWarehouseInventory({
-        warehouseId: selectedWarehouse,
-        categoryId: selectedCategory,
-        subcategoryId: selectedSubcategory,
-        search,
-      });
+      // Only send warehouseId if selected, and do not send empty strings for filters
+      const filters: any = {};
+      if (selectedWarehouse) filters.warehouseId = selectedWarehouse;
+      if (selectedCategory) filters.categoryId = selectedCategory;
+      if (selectedSubcategory) filters.subcategoryId = selectedSubcategory;
+      if (search) filters.search = search;
+      const data = await fetchWarehouseInventory(filters);
       setProducts(data);
       setLoading(false);
     };
@@ -66,16 +67,13 @@ const WarehouseInventory: React.FC = () => {
   useEffect(() => {
     const fetchMovements = async () => {
       setLoadingMovements(true);
-      const movements = await fetchStockMovements({
-        warehouseId: selectedWarehouse,
-        categoryId: selectedCategory,
-        subcategoryId: selectedSubcategory,
-      });
+      // No filters needed, just fetch all stock movements for the current user's warehouses
+      const movements = await fetchStockMovements();
       setStockMovements(movements);
       setLoadingMovements(false);
     };
     fetchMovements();
-  }, [selectedWarehouse, selectedCategory, selectedSubcategory]);
+  }, []);
 
   const handleAddStock = (product: any) => {
     setAddStockProduct(product);
@@ -136,9 +134,9 @@ const WarehouseInventory: React.FC = () => {
             <Select
               placeholder="Category"
               value={selectedCategory || undefined}
-              onDropdownVisibleChange={async (visible) => {
-                setCategoryPopoverVisible(visible ? 'category' : null);
-                if (!visible) return;
+              onOpenChange={async (open) => {
+                setCategoryPopoverVisible(open ? 'category' : null);
+                if (!open) return;
                 // Preload subcategories for the selected category if any
                 if (selectedCategory) {
                   const subs = await fetchSubcategories(selectedCategory);
@@ -157,7 +155,7 @@ const WarehouseInventory: React.FC = () => {
               }}
               allowClear
               style={{ width: 220 }}
-              dropdownRender={() => (
+              popupRender={() => (
                 <div>
                   {categories.map((cat: any) => {
                     const isSelected = selectedCategory === cat.id;
@@ -229,7 +227,7 @@ const WarehouseInventory: React.FC = () => {
               )}
               open={categoryPopoverVisible === 'category'}
             >
-              {/* Hide default options, handled in dropdownRender */}
+              {/* Hide default options, handled in popupRender */}
             </Select>
             {/* Show selected subcategory as tag */}
             {selectedSubcategory && (
@@ -278,12 +276,12 @@ const WarehouseInventory: React.FC = () => {
               {stockMovements.map((m: any) => (
                 <div key={m.id} className="flex flex-col pb-2 mb-2 border-b">
                   <div className="flex justify-between text-sm">
-                    <span>{m.productName}</span>
-                    <span>{m.type === 'IN' ? '+' : '-'}{m.quantity}</span>
+                    <span>{m.product?.name || `Product #${m.productId}`}</span>
+                    <span>{m.movement_type === 'IN' ? '+' : '-'}{m.quantity}</span>
                   </div>
                   <div className="flex justify-between text-xs text-gray-500">
-                    <span>{m.type === 'IN' ? 'Stock In' : 'Stock Out'}</span>
-                    <span>{m.date ? new Date(m.date).toLocaleString() : ''}</span>
+                    <span>{m.movement_type === 'IN' ? 'Stock In' : 'Stock Out'}</span>
+                    <span>{m.created_at ? new Date(m.created_at).toLocaleString() : ''}</span>
                   </div>
                 </div>
               ))}

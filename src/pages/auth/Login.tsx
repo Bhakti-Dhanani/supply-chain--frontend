@@ -22,7 +22,7 @@ const Login = () => {
     try {
       const data = await login({ email, password });
 
-      if (data && data.access_token && data.role) {
+      if (data && data.userId && data.access_token && data.role && data.name) {
         // Store token and user in Redux (persisted by redux-persist/sessionStorage)
         dispatch(loginAction({
           user: { id: data.userId, role: data.role, name: data.name, email },

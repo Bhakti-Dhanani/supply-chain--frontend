@@ -2,25 +2,23 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
 interface OrderState {
-  orders: any[];
+  orders: Record<number, any[]>; // Store orders for multiple users
 }
 
 const initialState: OrderState = {
-  orders: [],
+  orders: {},
 };
 
 const orderSlice = createSlice({
   name: 'orders',
   initialState,
   reducers: {
-    setOrders(state, action: PayloadAction<any[]>) {
-      state.orders = Array.isArray(action.payload) ? action.payload : [];
-    },
-    clearOrders(state) {
-      state.orders = [];
+    setOrders(state, action: PayloadAction<{ userId: number; orders: any[] }>) {
+      const { userId, orders } = action.payload;
+      state.orders[userId] = orders;
     },
   },
 });
 
-export const { setOrders, clearOrders } = orderSlice.actions;
+export const { setOrders } = orderSlice.actions;
 export default orderSlice.reducer;

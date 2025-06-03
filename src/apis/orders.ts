@@ -22,8 +22,8 @@ export const fetchOrderById = async (id: string | number) => {
 };
 
 // Fetch orders for a list of warehouse IDs (for managers)
-export const fetchOrdersByWarehouseIds = async (warehouseIds: number[]) => {
-  const response = await ordersApi.get('/orders', { params: { warehouseIds: warehouseIds.join(',') } });
+export const fetchOrdersByWarehouseIds = async (warehouseIds: number[], userId: number) => {
+  const response = await ordersApi.get('/orders', { params: { warehouseIds: warehouseIds.join(','), userId } });
   return Array.isArray(response.data) ? response.data : (response.data.orders || []);
 };
 

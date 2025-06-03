@@ -20,8 +20,13 @@ import { Spin } from 'antd';
 const Orders: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user } = useSelector((state: RootState) => state.auth);
-  const ordersRaw = useSelector((state: RootState) => state.orders.orders);
+  const { currentUserId } = useSelector((state: RootState) => state.auth);
+  const ordersRaw = useSelector((state: RootState) => {
+    if (currentUserId) {
+      return state.orders.orders[currentUserId];
+    }
+    return [];
+  });
   const orders = Array.isArray(ordersRaw) ? ordersRaw : [];
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,19 +34,21 @@ const Orders: React.FC = () => {
 
   useEffect(() => {
     const getOrders = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const data = await fetchOrders();
-        dispatch(setOrders(data));
-      } catch (err: any) {
-        setError('Failed to fetch orders.');
-      } finally {
-        setLoading(false);
+      if (currentUserId) {
+        setLoading(true);
+        setError('');
+        try {
+          const data = await fetchOrders();
+          dispatch(setOrders({ userId: currentUserId, orders: data }));
+        } catch (err: any) {
+          setError('Failed to fetch orders.');
+        } finally {
+          setLoading(false);
+        }
       }
     };
-    if (typeof user?.id === 'number') getOrders();
-  }, [user, dispatch]);
+    getOrders();
+  }, [currentUserId, dispatch]);
 
   const filteredOrders = orders.filter(order => 
     order.id.toString().includes(searchQuery) ||
@@ -155,12 +162,14 @@ const Orders: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-2 py-4 md:px-6 whitespace-nowrap">
-                      <button
-                        onClick={() => navigate(`/dashboard/vendor/orders/${order.id}`)}
-                        className="bg-[#1E3B3B] text-[#D6ECE6] px-3 py-1 rounded hover:bg-[#2A4D4D] transition text-xs md:text-sm w-full md:w-auto shadow"
-                      >
-                        View Details
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => navigate(`/dashboard/vendor/orders/${order.id}`)}
+                          className="bg-[#1E3B3B] text-[#D6ECE6] px-3 py-1 rounded hover:bg-[#2A4D4D] transition text-xs md:text-sm w-full md:w-auto shadow"
+                        >
+                          View Details
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

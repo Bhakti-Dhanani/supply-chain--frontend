@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import type { RootState } from '../redux/store';
 
 const useAuth = () => {
-  const user = useSelector((state: RootState) => state.auth.user);
-  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const { users, currentUserId, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const user = currentUserId ? users[currentUserId] : null;
   const navigate = useNavigate();
 
   const redirectToDashboard = () => {

@@ -12,20 +12,31 @@ import VendorLayout from './components/layout/VendorLayout';
 import Orders from './pages/dashboard/vendor/Orders';
 import CreateOrder from './pages/dashboard/vendor/CreateOrder';
 import OrderDetails from './pages/dashboard/vendor/OrderDetails';
+import WorderDetails from './pages/dashboard/warehouse/WorderDetails';
 import ProductList from './pages/dashboard/vendor/ProductList';
 import ProductDetails from './pages/dashboard/vendor/ProductDetails';
 import WarehouseLayout from './components/layout/WarehouseLayout';
+import TransporterLayout from './components/layout/TransporterLayout';
 import { persistor } from './redux/store';
 import WarehouseLocations from './pages/dashboard/warehouse/WarehouseLocations';
 import WarehouseOrders from './pages/dashboard/warehouse/WarehouseOrders';
 import WarehouseInventory from './pages/dashboard/warehouse/WarehouseInventory';
 import AddProduct from './pages/dashboard/warehouse/AddProduct';
+import AssignedShipments from './pages/dashboard/transporter/AssignedShipments';
+import DeliveryReporting from './pages/dashboard/transporter/DeliveryReporting';
+import VehicleRouting from './pages/dashboard/transporter/VehicleRouting';
+import TransportLogs from './pages/dashboard/transporter/TransportLogs';
+import PerformanceMetrics from './pages/dashboard/transporter/PerformanceMetrics';
+import TransporterSettings from './pages/dashboard/transporter/TransporterSettings';
+import NotificationsPage from './pages/notifications/NotificationsPage';
 
-import './App.css'
+import './App.css';
 
 function App() {
   // Get authentication state from Redux
-  const { user, token } = useSelector((state: RootState) => state.auth);
+  const { users, tokens, currentUserId } = useSelector((state: RootState) => state.auth);
+  const user = currentUserId ? users[currentUserId] : null;
+  const token = currentUserId ? tokens[currentUserId] : null;
 
   // Robust check: authenticated if user and token exist
   const isReallyAuthenticated = Boolean(user && user.id && token);
@@ -69,7 +80,25 @@ function App() {
             ) : <Navigate to="/login" replace />
           }
         />
-        <Route path="/dashboard/transporter" element={isReallyAuthenticated ? <TransporterDashboard /> : <Navigate to="/login" replace />} />
+        <Route
+          path="/dashboard/transporter/*"
+          element={
+            isReallyAuthenticated ? (
+              <TransporterLayout>
+                <Routes>
+                  <Route index element={<TransporterDashboard />} />
+                  <Route path="overview" element={<TransporterDashboard />} />
+                  <Route path="assigned-shipments" element={<AssignedShipments />} />
+                  <Route path="delivery-reporting" element={<DeliveryReporting />} />
+                  <Route path="vehicle-routing" element={<VehicleRouting />} />
+                  <Route path="transport-logs" element={<TransportLogs />} />
+                  <Route path="performance" element={<PerformanceMetrics />} />
+                  <Route path="settings" element={<TransporterSettings />} />
+                </Routes>
+              </TransporterLayout>
+            ) : <Navigate to="/login" replace />
+          }
+        />
         <Route
           path="/dashboard/warehouse/*"
           element={
@@ -82,12 +111,14 @@ function App() {
                   <Route path="orders" element={<WarehouseOrders />} />
                   <Route path="inventory" element={<WarehouseInventory />} />
                   <Route path="add-product" element={<AddProduct />} />
+                  <Route path="orders/:id" element={<WorderDetails />} />
                   {/* Add more warehouse manager routes here */}
                 </Routes>
               </WarehouseLayout>
             ) : <Navigate to="/login" replace />
           }
         />
+        <Route path="/notifications" element={<NotificationsPage />} />
       </Routes>
   );
 }
