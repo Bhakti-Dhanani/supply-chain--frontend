@@ -20,3 +20,13 @@ export const fetchStockMovements = async () => {
   const response = await axiosInstance.get('/stock-movements');
   return Array.isArray(response.data) ? response.data : (response.data.movements || []);
 };
+
+export const fetchInventory = async () => {
+  const response = await axiosInstance.get('/inventory');
+  return Array.isArray(response.data) ? response.data : [];
+};
+
+export const getInventoryForUserWarehouses = async (filters: { userId: number; categoryId?: string; subcategoryId?: string; search?: string; warehouseId?: string }) => {
+  const response = await axiosInstance.get('/inventory/warehouse', { params: filters });
+  return Array.isArray(response.data) ? response.data : [];
+};

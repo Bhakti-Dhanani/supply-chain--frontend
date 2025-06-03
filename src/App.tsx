@@ -28,6 +28,7 @@ import VehicleRouting from './pages/dashboard/transporter/VehicleRouting';
 import TransportLogs from './pages/dashboard/transporter/TransportLogs';
 import PerformanceMetrics from './pages/dashboard/transporter/PerformanceMetrics';
 import TransporterSettings from './pages/dashboard/transporter/TransporterSettings';
+import NotificationsPage from './pages/notifications/NotificationsPage';
 
 import './App.css';
 
@@ -117,6 +118,7 @@ function App() {
             ) : <Navigate to="/login" replace />
           }
         />
+        <Route path="/notifications" element={<NotificationsPage />} />
       </Routes>
   );
 }

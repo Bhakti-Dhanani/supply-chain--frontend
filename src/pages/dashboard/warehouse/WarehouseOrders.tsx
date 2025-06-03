@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Tag, Modal, Select, message, Spin } from 'antd';
 import { fetchMyWarehouses } from '../../../apis/warehouse';
 import { fetchOrdersByWarehouseIds, updateOrderStatus } from '../../../apis/orders';
+import { createShipment } from '../../../apis/shipments';
 import { useNavigate } from 'react-router-dom';
 
 const statusOptions = [
@@ -23,17 +24,19 @@ const WarehouseOrders: React.FC = () => {
     const fetchOrders = async () => {
       setLoading(true);
       try {
+        const userId = 1; // Replace with dynamic userId if available
         const warehouses = await fetchMyWarehouses();
         const warehouseIds = warehouses.map((w: any) => w.id);
         if (warehouseIds.length === 0) {
           setOrders([]);
+          message.info('No warehouses connected to your account.');
           setLoading(false);
           return;
         }
-        const allOrders = await fetchOrdersByWarehouseIds(warehouseIds);
+        const allOrders = await fetchOrdersByWarehouseIds(warehouseIds, userId); // Pass userId explicitly
         setOrders(allOrders);
       } catch (err) {
-        message.error('Failed to fetch orders for your warehouses');
+        message.error('Failed to fetch orders for warehouses connected to your account. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -53,6 +56,20 @@ const WarehouseOrders: React.FC = () => {
       message.error('Failed to update order status');
     } finally {
       setStatusUpdating(false);
+    }
+  };
+
+  const handleAssignShipment = async (orderId: number) => {
+    try {
+      const userId = 1; // Replace with actual user ID retrieval logic
+      const vehicleId = '1'; // Replace with vehicle selection logic
+
+      await createShipment({ orderId, userId, vehicleId });
+      message.success('Shipment assigned successfully!');
+      setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status: 'Shipped' } : o));
+    } catch (error) {
+      console.error('Error assigning shipment:', error);
+      message.error('Failed to assign shipment.');
     }
   };
 
@@ -79,11 +96,25 @@ const WarehouseOrders: React.FC = () => {
         </>
       ),
     },
+    {
+      title: 'Assign Shipment',
+      key: 'assignShipment',
+      render: (_: any, order: any) => (
+        order.status === 'Pending' ? (
+          <button
+            onClick={() => handleAssignShipment(order.id)}
+            className="w-full px-3 py-1 text-xs text-white transition bg-blue-500 rounded shadow hover:bg-blue-600 md:text-sm md:w-auto"
+          >
+            Assign Shipment
+          </button>
+        ) : null
+      ),
+    },
   ];
 
   return (
     <div className="min-h-screen px-2 pt-4 pb-8 sm:px-4">
-      <h1 className="text-2xl font-bold text-[#1E3B3B] mb-6">Orders for Your Warehouses</h1>
+      <h1 className="text-2xl font-bold text-[#1E3B3B] mb-6">Orders for Warehouses Connected to You</h1>
       <div className="p-4 bg-white shadow-sm rounded-xl">
         {loading ? <Spin size="large" /> : (
           <Table

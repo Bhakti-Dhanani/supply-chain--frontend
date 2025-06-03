@@ -4,6 +4,7 @@ import { fetchWarehouses } from '../../../apis/warehouse';
 import { createOrder } from '../../../apis/orders';
 import { fetchCategories } from '../../../apis/categories';
 import { getProductsByWarehouse } from '../../../apis/products';
+import { fetchSubcategories } from '../../../apis/subcategories';
 
 const CreateOrder: React.FC = () => {
   const navigate = useNavigate();
@@ -21,44 +22,51 @@ const CreateOrder: React.FC = () => {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    // Ensure categories are fetched correctly
-    fetchCategories().then((data) => {
-      console.log('API response for categories:', data);
-      if (Array.isArray(data)) {
-        setCategories(data);
-      } else if (data && Array.isArray(data.categories)) {
-        setCategories(data.categories);
-      } else {
-        setCategories([]);
-      }
-    });
+    fetchCategories()
+      .then((data) => {
+        console.log('Fetched Categories:', data);
+        setCategories(Array.isArray(data) ? data : []);
+      })
+      .catch((error) => {
+        console.error('Error fetching categories:', error);
+        setError(error.message || 'Failed to fetch categories. Please try again.');
+      });
   }, []);
 
   useEffect(() => {
-    fetchWarehouses().then((data) => setWarehouses(Array.isArray(data) ? data : []));
+    fetchWarehouses()
+      .then((data) => {
+        console.log('Fetched Warehouses:', data);
+        setWarehouses(Array.isArray(data) ? data : []);
+      })
+      .catch((error) => {
+        console.error('Error fetching warehouses:', error);
+        setError(error.message || 'Failed to fetch warehouses. Please try again.');
+      });
   }, []);
 
   useEffect(() => {
     if (selectedCategory) {
-      const foundCategory = categories.find((c) => String(c.id) === String(selectedCategory));
-      setSubcategories(foundCategory && Array.isArray(foundCategory.subcategories) ? foundCategory.subcategories : []);
-      setProducts(foundCategory && Array.isArray(foundCategory.products) ? foundCategory.products : []);
+      fetchSubcategories(Number(selectedCategory))
+        .then((data) => {
+          console.log('Fetched Subcategories:', data);
+          setSubcategories(data);
+        })
+        .catch((error) => {
+          console.error('Error fetching subcategories:', error);
+          setError(error.message || 'Failed to fetch subcategories. Please try again.');
+        });
     } else {
       setSubcategories([]);
-      setProducts([]);
     }
-  }, [selectedCategory, categories]);
+  }, [selectedCategory]);
 
   useEffect(() => {
-    if (selectedWarehouse) {
-      console.log('Selected Warehouse ID:', selectedWarehouse);
-      console.log('Selected Category ID:', selectedCategory);
-      console.log('Selected Subcategory ID:', selectedSubcategory);
-
+    if (selectedWarehouse && selectedSubcategory) {
       getProductsByWarehouse(
         Number(selectedWarehouse),
         selectedCategory ? Number(selectedCategory) : undefined,
-        selectedSubcategory ? Number(selectedSubcategory) : undefined
+        Number(selectedSubcategory)
       )
         .then((data) => {
           console.log('Fetched Products:', data);
@@ -66,21 +74,12 @@ const CreateOrder: React.FC = () => {
         })
         .catch((error) => {
           console.error('Error fetching products:', error);
-          setError('Failed to fetch products. Please try again.');
+          setError(error.message || 'Failed to fetch products. Please try again.');
         });
     } else {
-      console.log('No warehouse selected.');
       setProducts([]);
     }
   }, [selectedWarehouse, selectedCategory, selectedSubcategory]);
-
-  useEffect(() => {
-    console.log('Categories fetched:', categories);
-  }, [categories]);
-
-  useEffect(() => {
-    console.log('Subcategories updated:', subcategories);
-  }, [subcategories]);
 
   const handleItemChange = (idx: number, field: string, value: any) => {
     setItems(items => items.map((item, i) => i === idx ? { ...item, [field]: value } : item));
@@ -137,7 +136,11 @@ const CreateOrder: React.FC = () => {
               <label className="block mb-1 font-semibold">Category</label>
               <select className="w-full p-2 border rounded" value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)} required>
                 <option value="">Select category</option>
-                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {Array.isArray(categories) && categories.length > 0 ? (
+                  categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)
+                ) : (
+                  <option value="">No categories available</option>
+                )}
               </select>
             </div>
             <div>

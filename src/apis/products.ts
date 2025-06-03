@@ -16,14 +16,23 @@ export const createProduct = async (productData: any) => {
 export const getProductsByWarehouse = async (warehouseId: number, categoryId?: number, subcategoryId?: number) => {
   try {
     const params: any = {};
+    if (warehouseId) params.warehouseId = warehouseId;
     if (categoryId) params.categoryId = categoryId;
     if (subcategoryId) params.subcategoryId = subcategoryId;
 
-    const response = await productsApi.get(`/warehouse/${warehouseId}`, { params });
+    const response = await productsApi.get('/products', { params });
+    if (!response.data || response.data.length === 0) {
+      throw new Error('No products found for the selected warehouse, category, or subcategory.');
+    }
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching products by warehouse:', error);
-    throw error;
+
+    if (error.response && error.response.status === 404) {
+      throw new Error('Products not found for the selected warehouse.');
+    }
+
+    throw new Error(error.message || 'Unable to fetch products. Please try again later.');
   }
 };
 
