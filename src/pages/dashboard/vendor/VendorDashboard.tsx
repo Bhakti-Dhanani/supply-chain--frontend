@@ -10,6 +10,7 @@ import {
   FiDollarSign,
   FiAlertCircle,
   FiStar,
+  FiCalendar,
 } from 'react-icons/fi';
 import { fetchOrders } from '../../../apis/orders';
 import { fetchProducts } from '../../../apis/products';
@@ -61,11 +62,7 @@ const VendorDashboard: React.FC = () => {
   const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
   const pendingOrders = orders.filter(o => o.status === 'Pending').length;
   const topProducts = [...products].sort((a, b) => (b.popularity || 0) - (a.popularity || 0)).slice(0, 3);
-  const recentOrders = [...orders].sort((a, b) => {
-    const dateA = a.date ? new Date(a.date).getTime() : 0;
-    const dateB = b.date ? new Date(b.date).getTime() : 0;
-    return dateB - dateA;
-  }).slice(0, 5);
+  const recentOrders = orders.slice(0, 5); // Fetch the first 5 orders
   
   // Ensure shipments is always an array before using reduce
   const safeShipments = Array.isArray(shipments) ? shipments : [];
@@ -219,7 +216,12 @@ const VendorDashboard: React.FC = () => {
           <div className="p-4 overflow-x-auto bg-white shadow-sm sm:p-6 lg:col-span-2 rounded-xl">
             <div className="flex flex-col items-start justify-between gap-2 mb-4 sm:flex-row sm:items-center sm:mb-6 sm:gap-0">
               <h2 className="text-base sm:text-lg font-semibold text-[#1E3B3B]">Recent Orders</h2>
-              <button className="text-xs sm:text-sm text-[#6E8F89] hover:text-[#1E3B3B]">View All</button>
+              <button
+                className="text-xs sm:text-sm text-[#6E8F89] hover:text-[#1E3B3B]"
+                onClick={() => window.location.href = '/dashboard/vendor/orders'}
+              >
+                View All
+              </button>
             </div>
             <div className="overflow-x-auto">
               <Table
@@ -228,47 +230,67 @@ const VendorDashboard: React.FC = () => {
                 pagination={false}
                 className="vendor-orders-table min-w-[600px]"
                 columns={[
-                  { 
-                    title: 'Order ID', 
-                    dataIndex: 'id', 
+                  {
+                    title: 'Order ID',
+                    dataIndex: 'id',
                     key: 'id',
-                    render: (id) => <span className="font-medium text-[#1E3B3B]">#{id}</span>
+                    render: (id) => <span className="font-medium text-[#1E3B3B]">#{id}</span>,
                   },
-                  { 
-                    title: 'Customer', 
-                    dataIndex: 'customerName', 
-                    key: 'customerName',
-                    render: (name) => <span className="text-[#6E8F89]">{name}</span>
+                  {
+                    title: 'Date',
+                    dataIndex: 'created_at',
+                    key: 'created_at',
+                    render: (created_at) => {
+                      if (!created_at) {
+                        return (
+                          <div className="flex items-center text-[#6E8F89]">
+                            <FiCalendar className="mr-2" />
+                            N/A
+                          </div>
+                        );
+                      }
+                      const parsedDate = new Date(created_at);
+                      if (isNaN(parsedDate.getTime())) {
+                        return (
+                          <div className="flex items-center text-[#6E8F89]">
+                            <FiCalendar className="mr-2" />
+                            N/A
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="flex items-center text-[#6E8F89]">
+                          <FiCalendar className="mr-2" />
+                          {format(parsedDate, 'MMM d, yyyy')}
+                        </div>
+                      );
+                    },
                   },
-                  { 
-                    title: 'Date', 
-                    dataIndex: 'date', 
-                    key: 'date',
-                    render: (date) => {
-                      if (!date) return <span className="text-[#6E8F89]">N/A</span>;
-                      const parsedDate = new Date(date);
-                      if (isNaN(parsedDate.getTime())) return <span className="text-[#6E8F89]">N/A</span>;
-                      return <span className="text-[#6E8F89]">{format(parsedDate, 'MMM d')}</span>;
-                    }
-                  },
-                  { 
-                    title: 'Status', 
-                    dataIndex: 'status', 
-                    key: 'status', 
+                  {
+                    title: 'Status',
+                    dataIndex: 'status',
+                    key: 'status',
                     render: (status) => (
-                      <Tag 
+                      <Tag
                         className={`px-2 py-1 rounded-full text-xs ${statusColors[status] || 'bg-gray-100 text-gray-800'}`}
                       >
                         {status}
                       </Tag>
-                    ) 
+                    ),
                   },
-                  { 
-                    title: 'Total', 
-                    dataIndex: 'total', 
-                    key: 'total', 
+                  {
+                    title: 'Total',
+                    dataIndex: 'total_amount',
+                    key: 'total_amount',
                     align: 'right',
-                    render: (total) => <span className="font-medium text-[#1E3B3B]">${Number(total).toFixed(2)}</span>
+                    render: (total_amount) => {
+                      const amount = parseFloat(total_amount);
+                      return (
+                        <span className="font-medium text-[#1E3B3B]">
+                          ${!isNaN(amount) ? amount.toFixed(2) : '0.00'}
+                        </span>
+                      );
+                    },
                   },
                 ]}
               />

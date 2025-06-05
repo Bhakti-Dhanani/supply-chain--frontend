@@ -31,6 +31,7 @@ const TransporterDashboard: React.FC = () => {
           fetchShipments(),
           fetchVehicleRoutes(),
         ]);
+        console.log('Fetched Shipments:', shipmentsData); // Debugging API response
         setShipments(Array.isArray(shipmentsData) ? shipmentsData : []);
         setRoutes(Array.isArray(routesData) ? routesData : []);
       } catch (err) {
@@ -236,7 +237,16 @@ const TransporterDashboard: React.FC = () => {
                     title: 'Vehicle', 
                     dataIndex: 'vehicle', 
                     key: 'vehicle',
-                    render: (vehicle) => <span className="text-[#6E8F89]">{vehicle || 'N/A'}</span>
+                    render: (vehicle) => {
+                      if (vehicle && typeof vehicle === 'object') {
+                        return (
+                          <span className="text-[#6E8F89]">
+                            {vehicle.plate_number} ({vehicle.type})
+                          </span>
+                        );
+                      }
+                      return <span className="text-[#6E8F89]">N/A</span>;
+                    },
                   },
                   { 
                     title: 'Status', 

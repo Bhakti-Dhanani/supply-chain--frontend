@@ -7,7 +7,6 @@ import {
   FiPackage,
   FiTruck,
   FiSettings,
-  FiAlertCircle,
   FiMapPin,
   FiClipboard,
   FiMenu,
@@ -19,13 +18,7 @@ import { setOrders } from '../../redux/slices/orderSlice';
 const WarehouseSidebar: React.FC = () => {
   const { users, currentUserId } = useSelector((state: RootState) => state.auth);
   const user = currentUserId ? users[currentUserId] : null;
-  const orderCount = useSelector((state: RootState) => {
-    if (currentUserId) {
-      const orders = state.orders.orders[currentUserId];
-      return Array.isArray(orders) ? orders.length : 0;
-    }
-    return 0;
-  });
+ 
   const dispatch = useDispatch();
   const location = useLocation();
   const navigate = useNavigate();
@@ -171,9 +164,7 @@ const WarehouseSidebar: React.FC = () => {
           >
             <FiClipboard className="flex-shrink-0 text-lg" />
             <span>Orders</span>
-            <span className="ml-auto bg-[#EADCD6] text-[#1E3B3B] text-xs font-bold px-2 py-1 rounded-full">
-              {orderCount}
-            </span>
+           
           </NavLink>
 
           <NavLink
@@ -189,21 +180,6 @@ const WarehouseSidebar: React.FC = () => {
           >
             <FiTruck className="flex-shrink-0 text-lg" />
             <span>Shipments</span>
-          </NavLink>
-
-          <NavLink
-            to="/dashboard/warehouse/alerts"
-            className={({ isActive }) =>
-              `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
-                isActive 
-                  ? 'bg-[#6E8F89] text-[#B3D5CF] shadow-md'
-                  : 'text-[#D6ECE6] hover:bg-[#2A4D4D] hover:text-[#B3D5CF]'
-              }`
-            }
-            onClick={() => setIsMobileOpen(false)}
-          >
-            <FiAlertCircle className="flex-shrink-0 text-lg" />
-            <span>Reorder Alerts</span>
           </NavLink>
 
           <NavLink

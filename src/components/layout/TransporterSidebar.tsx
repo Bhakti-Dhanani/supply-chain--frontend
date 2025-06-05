@@ -6,9 +6,7 @@ import {
   FiHome,
   FiTruck,
   FiSettings,
-  FiTrendingUp,
   FiMap,
-  FiClipboard,
   FiBarChart2,
   FiMenu,
   FiX
@@ -19,13 +17,6 @@ import { setShipments } from '../../redux/slices/shipmentSlice';
 const TransporterSidebar: React.FC = () => {
   const { users, currentUserId } = useSelector((state: RootState) => state.auth);
   const user = currentUserId ? users[currentUserId] : null;
-  const shipmentCount = useSelector((state: RootState) => {
-    if (currentUserId) {
-      const shipments = state.shipments.shipments[currentUserId];
-      return Array.isArray(shipments) ? shipments.length : 0;
-    }
-    return 0;
-  });
   const dispatch = useDispatch();
   const location = useLocation();
   const navigate = useNavigate();
@@ -47,7 +38,7 @@ const TransporterSidebar: React.FC = () => {
     const getShipments = async () => {
       if (currentUserId) {
         try {
-                  const data = await fetchShipments(); // Removed argument from fetchShipments
+          const data = await fetchShipments(); // Removed argument from fetchShipments
           dispatch(setShipments(data)); // Removed userId property from dispatch
         } catch (err) {
           console.error('Error fetching shipments:', err);
@@ -154,26 +145,10 @@ const TransporterSidebar: React.FC = () => {
           >
             <FiTruck className="flex-shrink-0 text-lg" />
             <span>Assigned Shipments</span>
-            <span className="ml-auto bg-[#EADCD6] text-[#1E3B3B] text-xs font-bold px-2 py-1 rounded-full">
-              {shipmentCount}
-            </span>
+            
           </NavLink>
 
-          <NavLink
-            to="/dashboard/transporter/delivery-reporting"
-            className={({ isActive }) =>
-              `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
-                isActive 
-                  ? 'bg-[#6E8F89] text-[#B3D5CF] shadow-md'
-                  : 'text-[#D6ECE6] hover:bg-[#2A4D4D] hover:text-[#B3D5CF]'
-              }`
-            }
-            onClick={() => setIsMobileOpen(false)}
-          >
-            <FiClipboard className="flex-shrink-0 text-lg" />
-            <span>Delivery Reporting</span>
-          </NavLink>
-
+    
           <NavLink
             to="/dashboard/transporter/vehicle-routing"
             className={({ isActive }) =>
@@ -188,22 +163,6 @@ const TransporterSidebar: React.FC = () => {
             <FiMap className="flex-shrink-0 text-lg" />
             <span>Vehicle Routing</span>
           </NavLink>
-
-          <NavLink
-            to="/dashboard/transporter/transport-logs"
-            className={({ isActive }) =>
-              `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
-                isActive 
-                  ? 'bg-[#6E8F89] text-[#B3D5CF] shadow-md'
-                  : 'text-[#D6ECE6] hover:bg-[#2A4D4D] hover:text-[#B3D5CF]'
-              }`
-            }
-            onClick={() => setIsMobileOpen(false)}
-          >
-            <FiTrendingUp className="flex-shrink-0 text-lg" />
-            <span>Transport Logs</span>
-          </NavLink>
-
           <NavLink
             to="/dashboard/transporter/performance"
             className={({ isActive }) =>

@@ -21,6 +21,8 @@ const WarehouseDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [totalStock, setTotalStock] = useState(0);
   const [pendingOrders, setPendingOrders] = useState(0);
+  const [transporters, setTransporters] = useState<any[]>([]);
+  const [showTransporterModal, setShowTransporterModal] = useState(false);
 
   useEffect(() => {
     // If the current path is /dashboard/warehouse, redirect to /dashboard/warehouse/overview
@@ -101,6 +103,17 @@ const WarehouseDashboard: React.FC = () => {
     'Delivered': 'bg-green-100 text-green-800',
     'Pending': 'bg-yellow-100 text-yellow-800',
     'Cancelled': 'bg-red-100 text-red-800',
+  };
+
+  const fetchTransportersWithVehicles = async () => {
+    try {
+      const response = await fetch('/api/transporters/with-vehicles');
+      const data = await response.json();
+      setTransporters(data);
+      setShowTransporterModal(true);
+    } catch (error) {
+      console.error('Failed to fetch transporters:', error);
+    }
   };
 
   if (loading) {
@@ -356,6 +369,35 @@ const WarehouseDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Assign Shipment Button and Modal */}
+        <div className="fixed bottom-4 right-4">
+          <button
+            className="px-4 py-2 bg-blue-500 text-white rounded"
+            onClick={fetchTransportersWithVehicles}
+          >
+            Assign Shipment
+          </button>
+        </div>
+
+        {showTransporterModal && (
+          <div className="modal">
+            <h2>Transporters and Vehicles</h2>
+            <ul>
+              {transporters.map((transporter) => (
+                <li key={transporter.id}>
+                  <strong>{transporter.name}</strong>
+                  <ul>
+                    {transporter.vehicles.map((vehicle: { id: string; name: string }) => (
+                      <li key={vehicle.id}>{vehicle.name}</li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+            <button onClick={() => setShowTransporterModal(false)}>Close</button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,28 +1,84 @@
-import React, { useEffect, useState } from 'react';
-import { Table, Select, Input, Spin, Card, Tag, Button, Modal, message } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { 
+  FiSearch,
+  FiFilter,
+  FiPlus,
+  FiArrowUp,
+  FiArrowDown
+} from 'react-icons/fi';
+import { message } from 'antd';
 import { fetchMyWarehouses } from '../../../apis/warehouse';
-import { fetchWarehouseInventory, fetchCategories, fetchSubcategories, fetchStockMovements } from '../../../apis/inventory';
+import { fetchWarehouseInventory, fetchCategories, fetchStockMovements } from '../../../apis/inventory';
+import { updateProductQuantity } from '../../../apis/products';
+import { format } from 'date-fns';
+
+interface Product {
+  id: number;
+  name: string;
+  stock: number;
+  warehouseName: string;
+  categoryName: string;
+  subcategoryName: string;
+  price: number;
+  subcategoryId: string;
+}
+
+interface Movement {
+  id: number;
+  product: { name: string };
+  productId: number;
+  quantity: number;
+  movement_type: 'IN' | 'OUT';
+  created_at: string;
+}
 
 const WarehouseInventory: React.FC = () => {
   const [warehouses, setWarehouses] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const [subcategories, setSubcategories] = useState<any[]>([]);
-  const [stockMovements, setStockMovements] = useState<any[]>([]);
+  const [stockMovements, setStockMovements] = useState<Movement[]>([]);
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadingMovements, setLoadingMovements] = useState(false);
-  // Handler for showing subcategories as a popover list
-  const [categoryPopoverVisible, setCategoryPopoverVisible] = useState<string | null>(null);
-  const [addStockProduct, setAddStockProduct] = useState<any>(null);
+  const [addStockProduct, setAddStockProduct] = useState<Product | null>(null);
   const [addStockModalVisible, setAddStockModalVisible] = useState(false);
   const [addStockQuantity, setAddStockQuantity] = useState<number>(0);
+  const movementsContainerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // Auto-scroll for stock movements
+  useEffect(() => {
+    if (!movementsContainerRef.current || stockMovements.length <= 5) return;
+
+    const container = movementsContainerRef.current;
+    const contentHeight = container.scrollHeight;
+    const scrollSpeed = 30; // pixels per second
+    let scrollPosition = 0;
+    let animationFrameId: number;
+
+    const scroll = () => {
+      scrollPosition += scrollSpeed / 60; // 60fps
+      
+      if (scrollPosition >= contentHeight - container.clientHeight) {
+        // Reset to top when reaching bottom
+        scrollPosition = 0;
+        container.scrollTop = 0;
+      } else {
+        container.scrollTop = scrollPosition;
+      }
+      
+      animationFrameId = requestAnimationFrame(scroll);
+    };
+
+    animationFrameId = requestAnimationFrame(scroll);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [stockMovements]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,38 +92,24 @@ const WarehouseInventory: React.FC = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    const fetchSubs = async () => {
-      if (selectedCategory) {
-        const subs = await fetchSubcategories(selectedCategory);
-        setSubcategories(subs);
-      } else {
-        setSubcategories([]);
-      }
-    };
-    fetchSubs();
-  }, [selectedCategory]);
+  const fetchInventory = async () => {
+    setLoading(true);
+    const filters: any = {};
+    if (selectedWarehouse) filters.warehouseId = selectedWarehouse;
+    if (selectedCategory) filters.categoryId = selectedCategory;
+    if (search) filters.search = search;
+    const data = await fetchWarehouseInventory(filters);
+    setProducts(data);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchInventory = async () => {
-      setLoading(true);
-      // Only send warehouseId if selected, and do not send empty strings for filters
-      const filters: any = {};
-      if (selectedWarehouse) filters.warehouseId = selectedWarehouse;
-      if (selectedCategory) filters.categoryId = selectedCategory;
-      if (selectedSubcategory) filters.subcategoryId = selectedSubcategory;
-      if (search) filters.search = search;
-      const data = await fetchWarehouseInventory(filters);
-      setProducts(data);
-      setLoading(false);
-    };
     fetchInventory();
-  }, [selectedWarehouse, selectedCategory, selectedSubcategory, search]);
+  }, [selectedWarehouse, selectedCategory, search]);
 
   useEffect(() => {
     const fetchMovements = async () => {
       setLoadingMovements(true);
-      // No filters needed, just fetch all stock movements for the current user's warehouses
       const movements = await fetchStockMovements();
       setStockMovements(movements);
       setLoadingMovements(false);
@@ -75,220 +117,264 @@ const WarehouseInventory: React.FC = () => {
     fetchMovements();
   }, []);
 
-  const handleAddStock = (product: any) => {
-    setAddStockProduct(product);
-    setAddStockQuantity(0);
-    setAddStockModalVisible(true);
+  const handleAddStock = async (productId: number, currentQuantity: number) => {
+    const newQuantity = prompt('Enter new stock quantity:', currentQuantity.toString());
+    if (!newQuantity || isNaN(Number(newQuantity))) {
+      message.error('Invalid quantity entered');
+      return;
+    }
+
+    try {
+      await updateProductQuantity(productId, Number(newQuantity));
+      message.success('Stock updated successfully');
+      // Refresh inventory data
+      const updatedProducts = await fetchWarehouseInventory(selectedWarehouse);
+      setProducts(updatedProducts);
+    } catch (err) {
+      message.error('Failed to update stock');
+    }
   };
 
-  const handleAddStockOk = () => {
-    // TODO: Implement API call to add stock
-    message.success('Stock added (stub)!');
-    setAddStockModalVisible(false);
+  const handleAddStockOk = async () => {
+    if (!addStockProduct || addStockQuantity <= 0) {
+      message.error('Invalid stock quantity');
+      return;
+    }
+
+    try {
+      await updateProductQuantity(addStockProduct.id, addStockQuantity);
+      message.success('Stock updated successfully');
+
+      // Refresh inventory data
+      const updatedProducts = await fetchWarehouseInventory(selectedWarehouse);
+      setProducts(updatedProducts);
+
+      // Close modal
+      setAddStockModalVisible(false);
+      setAddStockProduct(null);
+      setAddStockQuantity(0);
+    } catch (err) {
+      message.error('Failed to update stock');
+    }
   };
 
-  const handleAddStockCancel = () => {
-    setAddStockModalVisible(false);
+  const getStockStatus = (stock: number) => {
+    if (stock <= 0) return <span className="bg-[#2A4D4D] text-[#D6ECE6] px-3 py-1 rounded-full text-xs">Out of Stock</span>;
+    if (stock < 10) return <span className="bg-[#EADCD6] text-[#1E3B3B] px-3 py-1 rounded-full text-xs">Low Stock</span>;
+    return <span className="bg-[#B3D5CF] text-[#1E3B3B] px-3 py-1 rounded-full text-xs">In Stock</span>;
   };
-
-  const columns = [
-    { title: 'Product Name', dataIndex: 'name', key: 'name' },
-    { title: 'Stock', dataIndex: 'stock', key: 'stock', render: (stock: number) => <Tag color={stock > 0 ? 'green' : 'red'}>{stock}</Tag> },
-    { title: 'Warehouse', dataIndex: 'warehouseName', key: 'warehouseName' },
-    { title: 'Category', dataIndex: 'categoryName', key: 'categoryName' },
-    { title: 'Subcategory', dataIndex: 'subcategoryName', key: 'subcategoryName' },
-    {
-      title: 'Action',
-      key: 'action',
-      render: (_: any, record: any) => (
-        <Button size="small" onClick={() => handleAddStock(record)}>
-          Add Stock
-        </Button>
-      ),
-    },
-  ];
 
   return (
-    <div className="flex min-h-screen gap-6 px-2 pt-4 pb-8 sm:px-4">
-      <div className="flex-1">
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <Input.Search
-              placeholder="Search product..."
+    <div className="min-h-screen px-2 pt-4 pb-8 transition-all duration-300 bg-gray-50 sm:px-4 md:px-6">
+      <div className="ml-0">
+        <div className="flex flex-col items-start justify-between gap-4 mb-6 md:flex-row md:items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-[#1E3B3B]">Warehouse Inventory</h2>
+            <p className="text-sm text-[#6E8F89]">Manage and track your inventory across warehouses</p>
+          </div>
+          <button
+            onClick={() => navigate('/dashboard/warehouse/add-product')}
+            className="flex items-center px-4 py-2 bg-[#1E3B3B] text-[#D6ECE6] rounded-lg hover:bg-[#2A4D4D] transition"
+          >
+            <FiPlus className="mr-2" />
+            Add Product
+          </button>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-col gap-4 mb-6 md:flex-row">
+          <div className="relative flex-1">
+            <FiSearch className="absolute left-3 top-3 text-[#6E8F89]" />
+            <input
+              type="text"
+              placeholder="Search products..."
+              className="w-full pl-10 pr-4 py-2 border border-[#B3D5CF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B3D5CF] text-[#1E3B3B] bg-white shadow-sm"
               value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{ width: 200 }}
+              onChange={(e) => setSearch(e.target.value)}
             />
-            <Select
-              placeholder="Warehouse"
-              value={selectedWarehouse || undefined}
-              onChange={setSelectedWarehouse}
-              allowClear
-              style={{ width: 160 }}
-            >
-              {warehouses.map((w: any) => (
-                <Select.Option key={w.id} value={w.id}>{w.name}</Select.Option>
-              ))}
-            </Select>
-            {/* Category Dropdown with Subcategory as Nested Menu */}
-            <Select
-              placeholder="Category"
-              value={selectedCategory || undefined}
-              onOpenChange={async (open) => {
-                setCategoryPopoverVisible(open ? 'category' : null);
-                if (!open) return;
-                // Preload subcategories for the selected category if any
-                if (selectedCategory) {
-                  const subs = await fetchSubcategories(selectedCategory);
-                  setSubcategories(subs);
-                }
-              }}
-              onChange={async (value) => {
-                setSelectedCategory(value);
-                setSelectedSubcategory('');
-                const subs = await fetchSubcategories(value);
-                setSubcategories(subs);
-                // If no subcategories, close dropdown
-                if (!subs || subs.length === 0) {
-                  setTimeout(() => setCategoryPopoverVisible(null), 100);
-                }
-              }}
-              allowClear
-              style={{ width: 220 }}
-              popupRender={() => (
-                <div>
-                  {categories.map((cat: any) => {
-                    const isSelected = selectedCategory === cat.id;
-                    return (
-                      <div key={cat.id} style={{ position: 'relative' }}>
-                        <div
-                          style={{
-                            padding: '8px 16px',
-                            cursor: 'pointer',
-                            background: isSelected ? '#f0f0f0' : undefined,
-                            fontWeight: isSelected ? 600 : 400,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                          }}
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            setSelectedCategory(cat.id);
-                            setSelectedSubcategory('');
-                            const subs = await fetchSubcategories(cat.id);
-                            setSubcategories(subs);
-                            if (!subs || subs.length === 0) {
-                              setTimeout(() => setCategoryPopoverVisible(null), 100);
-                            }
-                          }}
-                        >
-                          {cat.name}
-                          {cat.id === selectedCategory && subcategories.length > 0 && (
-                            <span style={{ marginLeft: 8 }}>&#9654;</span>
-                          )}
+          </div>
+          
+          <select
+            className="w-full pl-4 pr-10 py-2 border border-[#B3D5CF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B3D5CF] text-[#1E3B3B] bg-white shadow-sm md:w-48"
+            value={selectedWarehouse}
+            onChange={(e) => setSelectedWarehouse(e.target.value)}
+          >
+            <option value="">All Warehouses</option>
+            {warehouses.map((w) => (
+              <option key={w.id} value={w.id}>{w.name}</option>
+            ))}
+          </select>
+
+          <select
+            className="w-full pl-4 pr-10 py-2 border border-[#B3D5CF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B3D5CF] text-[#1E3B3B] bg-white shadow-sm md:w-48"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            <option value="">All Categories</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+
+          <button className="flex items-center px-4 py-2 border border-[#B3D5CF] rounded-lg bg-white text-[#1E3B3B] hover:bg-[#F5F9F8] w-full md:w-auto justify-center shadow">
+            <FiFilter className="mr-2 text-[#6E8F89]" />
+            <span>More Filters</span>
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-6 lg:flex-row">
+          {/* Products Table */}
+          <div className="flex-1 overflow-x-auto bg-white shadow-sm rounded-xl">
+            {loading ? (
+              <div className="flex items-center justify-center p-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#1E3B3B]"></div>
+              </div>
+            ) : products.length === 0 ? (
+              <div className="p-6 text-center text-[#6E8F89]">
+                {search || selectedWarehouse || selectedCategory 
+                  ? 'No products match your filters' 
+                  : 'No products found'}
+              </div>
+            ) : (
+              <table className="min-w-full divide-y divide-[#6E8F89] text-xs md:text-sm">
+                <thead className="bg-[#1E3B3B]">
+                  <tr>
+                    <th className="px-2 md:px-6 py-3 text-left font-medium text-[#D6ECE6] uppercase tracking-wider">Product</th>
+                    <th className="px-2 md:px-6 py-3 text-left font-medium text-[#D6ECE6] uppercase tracking-wider">Stock</th>
+                    <th className="px-2 md:px-6 py-3 text-left font-medium text-[#D6ECE6] uppercase tracking-wider">Warehouse</th>
+                    <th className="px-2 md:px-6 py-3 text-left font-medium text-[#D6ECE6] uppercase tracking-wider">Category</th>
+                    <th className="px-2 md:px-6 py-3 text-left font-medium text-[#D6ECE6] uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-[#6E8F89]">
+                  {products.map((product) => (
+                    <tr key={product.id} className="hover:bg-[#F5F9F8]">
+                      <td className="px-2 py-4 md:px-6">
+                        <div className="font-medium text-[#1E3B3B]">{product.name}</div>
+                        <div className="text-xs text-[#6E8F89]">{product.subcategoryName}</div>
+                      </td>
+                      <td className="px-2 py-4 md:px-6">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[#1E3B3B]">{product.stock}</span>
+                          {getStockStatus(product.stock)}
                         </div>
-                        {/* Subcategory nested menu */}
-                        {cat.id === selectedCategory && subcategories.length > 0 && categoryPopoverVisible === 'category' && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              left: '100%',
-                              top: 0,
-                              background: '#fff',
-                              border: '1px solid #eee',
-                              minWidth: 180,
-                              zIndex: 1000,
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                            }}
-                          >
-                            {subcategories.map((sc: any) => (
-                              <div
-                                key={sc.id}
-                                style={{
-                                  padding: '8px 16px',
-                                  cursor: 'pointer',
-                                  background: selectedSubcategory === sc.id ? '#e6f7ff' : undefined,
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedSubcategory(sc.id);
-                                  setTimeout(() => setCategoryPopoverVisible(null), 100);
-                                }}
-                              >
-                                {sc.name}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              open={categoryPopoverVisible === 'category'}
-            >
-              {/* Hide default options, handled in popupRender */}
-            </Select>
-            {/* Show selected subcategory as tag */}
-            {selectedSubcategory && (
-              <Tag closable onClose={() => setSelectedSubcategory('')} style={{ marginLeft: 8 }}>
-                {subcategories.find(sc => sc.id === selectedSubcategory)?.name || 'Subcategory'}
-              </Tag>
+                      </td>
+                      <td className="px-2 py-4 md:px-6">
+                        <div className="text-[#1E3B3B]">{product.warehouseName}</div>
+                      </td>
+                      <td className="px-2 py-4 md:px-6">
+                        <div className="text-[#6E8F89]">{product.categoryName}</div>
+                      </td>
+                      <td className="px-2 py-4 md:px-6">
+                        <button
+                          onClick={() => handleAddStock(product.id, product.stock)}
+                          className="px-3 py-1 text-xs text-white transition bg-[#1E3B3B] rounded hover:bg-[#2A4D4D] md:text-sm"
+                        >
+                          Add Stock
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => navigate('/dashboard/warehouse/add-product')}
-          >
-            Add Product
-          </Button>
-        </div>
-        <Card className="p-0 overflow-hidden border-0 shadow-sm rounded-xl">
-          {loading ? <Spin size="large" /> : (
-            <Table
-              dataSource={products}
-              columns={columns}
-              rowKey="id"
-              pagination={{ pageSize: 10 }}
-            />
-          )}
-        </Card>
-        <Modal
-          title={`Add Stock to ${addStockProduct?.name || ''}`}
-          open={addStockModalVisible}
-          onOk={handleAddStockOk}
-          onCancel={handleAddStockCancel}
-        >
-          <Input
-            type="number"
-            min={1}
-            value={addStockQuantity}
-            onChange={e => setAddStockQuantity(Number(e.target.value))}
-            placeholder="Enter quantity"
-          />
-        </Modal>
-      </div>
-      <div className="w-full md:w-1/3 lg:w-1/4">
-        <Card title="Stock Movements" className="h-full">
-          {loadingMovements ? <Spin size="large" /> : (
-            <div className="space-y-3">
-              {stockMovements.map((m: any) => (
-                <div key={m.id} className="flex flex-col pb-2 mb-2 border-b">
-                  <div className="flex justify-between text-sm">
-                    <span>{m.product?.name || `Product #${m.productId}`}</span>
-                    <span>{m.movement_type === 'IN' ? '+' : '-'}{m.quantity}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>{m.movement_type === 'IN' ? 'Stock In' : 'Stock Out'}</span>
-                    <span>{m.created_at ? new Date(m.created_at).toLocaleString() : ''}</span>
+
+          {/* Stock Movements */}
+          <div className="w-full lg:w-96">
+            <div className="overflow-hidden bg-white shadow-sm rounded-xl">
+              <div className="p-4 bg-[#1E3B3B]">
+                <h3 className="text-lg font-semibold text-[#D6ECE6]">Recent Stock Movements</h3>
+              </div>
+              {loadingMovements ? (
+                <div className="flex items-center justify-center p-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#1E3B3B]"></div>
+                </div>
+              ) : stockMovements.length === 0 ? (
+                <div className="p-6 text-center text-[#6E8F89]">No stock movements found</div>
+              ) : (
+                <div 
+                  ref={movementsContainerRef}
+                  className="overflow-y-auto h-96"
+                >
+                  <div className="divide-y divide-[#EADCD6]">
+                    {stockMovements.map((movement) => (
+                      <div key={movement.id} className="p-4 hover:bg-[#F5F9F8]">
+                        <div className="flex items-start">
+                          <div className={`flex items-center justify-center w-6 h-6 rounded-full mr-3 mt-1 ${
+                            movement.movement_type === 'IN' ? 'bg-[#B3D5CF] text-[#1E3B3B]' : 'bg-[#EADCD6] text-[#1E3B3B]'
+                          }`}>
+                            {movement.movement_type === 'IN' ? (
+                              <FiArrowUp className="text-xs" />
+                            ) : (
+                              <FiArrowDown className="text-xs" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex justify-between">
+                              <span className="font-medium text-[#1E3B3B]">
+                                {movement.product?.name || `Product #${movement.productId}`}
+                              </span>
+                              <span className={`font-medium ${
+                                movement.movement_type === 'IN' ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                {movement.movement_type === 'IN' ? '+' : '-'}{movement.quantity}
+                              </span>
+                            </div>
+                            <div className="flex justify-between mt-1">
+                              <span className="text-xs text-[#6E8F89]">
+                                {movement.movement_type === 'IN' ? 'Stock In' : 'Stock Out'}
+                              </span>
+                              <span className="text-xs text-[#6E8F89]">
+                                {movement.created_at ? format(new Date(movement.created_at), 'MMM d, h:mm a') : ''}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-              {stockMovements.length === 0 && <div className="text-center text-gray-400">No stock movements</div>}
+              )}
             </div>
-          )}
-        </Card>
+          </div>
+        </div>
+
+        {/* Add Stock Modal */}
+        {addStockModalVisible && addStockProduct && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="w-full max-w-md p-6 bg-white rounded-xl">
+              <h3 className="text-lg font-semibold text-[#1E3B3B] mb-4">
+                Add Stock to {addStockProduct.name}
+              </h3>
+              <div className="mb-4">
+                <label className="block text-sm text-[#6E8F89] mb-2">Quantity</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="w-full pl-4 pr-4 py-2 border border-[#B3D5CF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B3D5CF] text-[#1E3B3B]"
+                  value={addStockQuantity}
+                  onChange={(e) => setAddStockQuantity(Number(e.target.value))}
+                  placeholder="Enter quantity"
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setAddStockModalVisible(false)}
+                  className="px-4 py-2 border border-[#B3D5CF] rounded-lg text-[#1E3B3B] hover:bg-[#F5F9F8]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddStockOk}
+                  className="px-4 py-2 bg-[#1E3B3B] text-[#D6ECE6] rounded-lg hover:bg-[#2A4D4D]"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -9,7 +9,6 @@ import {
   FiSettings,
   FiTrendingUp,
   FiUsers,
-  FiMap,
   FiMenu,
   FiX
 } from 'react-icons/fi';
@@ -187,9 +186,6 @@ const Sidebar: React.FC = () => {
           >
             <FiTruck className="flex-shrink-0 text-lg" />
             <span>Shipments</span>
-            <span className="ml-auto bg-[#EADCD6] text-[#1E3B3B] text-xs font-bold px-2 py-1 rounded-full">
-              2
-            </span>
           </NavLink>
 
           <NavLink
@@ -205,21 +201,6 @@ const Sidebar: React.FC = () => {
           >
             <FiUsers className="flex-shrink-0 text-lg" />
             <span>Warehouses</span>
-          </NavLink>
-
-          <NavLink
-            to="/dashboard/vendor/routes"
-            className={({ isActive }) =>
-              `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
-                isActive 
-                  ? 'bg-[#6E8F89] text-[#B3D5CF] shadow-md'
-                  : 'text-[#D6ECE6] hover:bg-[#2A4D4D] hover:text-[#B3D5CF]'
-              }`
-            }
-            onClick={() => setIsMobileOpen(false)}
-          >
-            <FiMap className="flex-shrink-0 text-lg" />
-            <span>Delivery Routes</span>
           </NavLink>
         </nav>
 

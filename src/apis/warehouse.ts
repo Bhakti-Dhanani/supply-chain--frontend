@@ -28,3 +28,8 @@ export const fetchMyWarehouses = async () => {
     throw new Error(error.response?.data?.message || 'Unable to fetch user warehouses.');
   }
 };
+
+export const fetchWarehouseLocations = async () => {
+  const response = await axiosInstance.get('/warehouses/locations');
+  return response.data;
+};
