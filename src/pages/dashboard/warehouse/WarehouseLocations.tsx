@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { fetchMyWarehouses } from '../../../apis/warehouse';
-import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
+import { useJsApiLoader } from '@react-google-maps/api';
 import { Card, Spin } from 'antd';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
@@ -9,6 +9,7 @@ const WarehouseLocations: React.FC = () => {
   const [warehouses, setWarehouses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const mapRef = useRef<HTMLDivElement | null>(null);
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
@@ -35,6 +36,34 @@ const WarehouseLocations: React.FC = () => {
     ? { lat: Number(warehouses[0].location.latitude), lng: Number(warehouses[0].location.longitude) }
     : { lat: 23.0225, lng: 72.5714 }; // Default: Ahmedabad
 
+  useEffect(() => {
+    if (isLoaded && warehouses.length && mapRef.current) {
+      const map = new google.maps.Map(mapRef.current, {
+        center: defaultCenter,
+        zoom: 8,
+      });
+
+      warehouses.forEach((wh) => {
+        if (
+          wh.location &&
+          wh.location.latitude &&
+          wh.location.longitude &&
+          google.maps.marker &&
+          google.maps.marker.AdvancedMarkerElement
+        ) {
+          new google.maps.marker.AdvancedMarkerElement({
+            map,
+            position: {
+              lat: Number(wh.location.latitude),
+              lng: Number(wh.location.longitude),
+            },
+            title: wh.name,
+          });
+        }
+      });
+    }
+  }, [isLoaded, warehouses]);
+
   return (
     <div className="min-h-screen px-2 sm:px-4 pt-4 pb-8">
       <h1 className="text-2xl font-bold text-[#1E3B3B] mb-6">Warehouse Locations</h1>
@@ -46,21 +75,11 @@ const WarehouseLocations: React.FC = () => {
         ) : error ? (
           <div className="text-red-500 p-6">{error}</div>
         ) : (
-          <GoogleMap
-            mapContainerStyle={{ width: '100%', height: '400px', borderRadius: '12px' }}
-            center={defaultCenter}
-            zoom={8}
-          >
-            {warehouses.map((wh) =>
-              wh.location && wh.location.latitude && wh.location.longitude ? (
-                <Marker
-                  key={wh.id}
-                  position={{ lat: Number(wh.location.latitude), lng: Number(wh.location.longitude) }}
-                  label={wh.name}
-                />
-              ) : null
-            )}
-          </GoogleMap>
+          <div
+            id="map"
+            ref={mapRef}
+            style={{ width: '100%', height: '400px', borderRadius: '12px' }}
+          ></div>
         )}
       </Card>
       <Card className="p-0 overflow-hidden border-0 shadow-sm rounded-xl">

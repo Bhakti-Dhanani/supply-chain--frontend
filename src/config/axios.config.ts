@@ -24,6 +24,11 @@ axiosInstance.interceptors.request.use(
       // Remove Authorization header if no token
       delete config.headers['Authorization'];
     }
+
+    if (!token || token === 'null' || token === 'undefined') {
+      console.error('Authentication token is missing or invalid:', token);
+      // Optionally, redirect to login page or refresh token logic can be added here.
+    }
     return config;
   },
   (error) => Promise.reject(error)

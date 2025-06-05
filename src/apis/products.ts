@@ -45,3 +45,8 @@ export const getProductById = async (productId: number) => {
     throw error;
   }
 };
+
+export const updateProductQuantity = async (productId: number, quantity: number) => {
+  const response = await productsApi.put(`/products/${productId}/quantity`, { quantity });
+  return response.data;
+};
